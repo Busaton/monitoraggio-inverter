@@ -26,7 +26,7 @@
             margin: 10px 0;
         }
         #dashboard {
-            display: none; /* Nasconde la dashboard finché l'utente non è loggato */
+            display: none;
         }
     </style>
 </head>
@@ -66,8 +66,8 @@
 
         
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth();
-        const database = getDatabase();
+        const auth = getAuth(app);
+        const database = getDatabase(app);
 
         function login() {
             const email = document.getElementById('email').value;
@@ -112,6 +112,5 @@
             }
         });
     </script>
-
 </body>
 </html>
