@@ -26,7 +26,7 @@
             margin: 10px 0;
         }
         #dashboard {
-            display: none;
+            display: none; /* Nasconde la dashboard finché l'utente non è loggato */
         }
     </style>
 </head>
@@ -36,7 +36,7 @@
         <h2>Login</h2>
         <input type="email" id="email" placeholder="Email" required>
         <input type="password" id="password" placeholder="Password" required>
-        <button onclick="login()">Accedi</button>
+        <button id="login-button">Accedi</button>
         <p id="error-message" style="color: red;"></p>
     </div>
 
@@ -64,10 +64,10 @@
           measurementId: "G-Q2JKB2TK4P"
         };
 
-        
+
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const database = getDatabase(app);
+        const auth = getAuth();
+        const database = getDatabase();
 
         function login() {
             const email = document.getElementById('email').value;
@@ -82,6 +82,8 @@
                     document.getElementById('error-message').textContent = "Errore: " + error.message;
                 });
         }
+
+        document.getElementById('login-button').addEventListener('click', login);
 
         function logout() {
             signOut(auth).then(() => {
@@ -112,5 +114,6 @@
             }
         });
     </script>
+
 </body>
 </html>
