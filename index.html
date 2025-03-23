@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoraggio Inverter</title>
+    <title>Monitoraggio Inverter - Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,52 +12,45 @@
             background-color: #f0f0f0;
         }
         .container {
-            max-width: 800px;
-            margin: 50px auto;
+            max-width: 400px;
+            margin: 100px auto;
             padding: 20px;
             background-color: white;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
             text-align: center;
-            color: #333;
         }
-        .data {
-            display: flex;
-            justify-content: space-between;
+        input, button {
+            width: 100%;
+            padding: 10px;
             margin: 10px 0;
         }
-        .data span {
-            font-size: 18px;
-        }
-        .update {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 14px;
-            color: #666;
+        #dashboard {
+            display: none; /* Nasconde la dashboard finché l'utente non è loggato */
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div id="login-container" class="container">
+        <h2>Login</h2>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button onclick="login()">Accedi</button>
+        <p id="error-message" style="color: red;"></p>
+    </div>
+
+    <div id="dashboard" class="container">
         <h1>Monitoraggio Inverter</h1>
-
-        <div class="data">
-            <span><strong>Pin:</strong> <span id="pin">Caricamento...</span> W</span>
-            <span><strong>Pout:</strong> <span id="pout">Caricamento...</span> W</span>
-        </div>
-
-        <div class="update">
-            <p id="lastUpdate">Ultimo aggiornamento: Caricamento...</p>
-        </div>
+        <p><strong>Pin:</strong> <span id="pin">Caricamento...</span> W</p>
+        <p><strong>Pout:</strong> <span id="pout">Caricamento...</span> W</p>
+        <button onclick="logout()">Esci</button>
     </div>
 
     <script type="module">
-        // Importa le funzioni di Firebase necessarie
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-app.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";  // Aggiungi il modulo per il database
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-auth.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.5.0/firebase-database.js";
 
         // Configurazione di Firebase
         const firebaseConfig = {
@@ -71,37 +64,53 @@
           measurementId: "G-Q2JKB2TK4P"
         };
 
-        // Inizializza Firebase
+        
         const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const auth = getAuth();
+        const database = getDatabase();
 
-        // Riferimento ai dati nel Realtime Database
-        const inverterRef = ref(db, '/inverter');
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                    loadData();
+                })
+                .catch((error) => {
+                    document.getElementById('error-message').textContent = "Errore: " + error.message;
+                });
+        }
 
-        // Funzione per aggiornare i dati sulla pagina
-        function updateData() {
+        function logout() {
+            signOut(auth).then(() => {
+                document.getElementById('login-container').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+            });
+        }
+
+        function loadData() {
+            const inverterRef = ref(database, '/inverter');
             get(inverterRef).then((snapshot) => {
-                const data = snapshot.val();
-
-                if (data) {
-                    const pin = data.pin || 'N/A';
-                    const pout = data.pout || 'N/A';
-                    const lastUpdate = data.last_update || 'N/A';
-
-                    document.getElementById('pin').textContent = pin;
-                    document.getElementById('pout').textContent = pout;
-                    document.getElementById('lastUpdate').textContent = `Ultimo aggiornamento: ${lastUpdate}`;
-                } else {
-                    console.log('Nessun dato disponibile');
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    document.getElementById('pin').textContent = data.pin || 'N/A';
+                    document.getElementById('pout').textContent = data.pout || 'N/A';
                 }
             });
         }
 
-        // Aggiorna i dati all'avvio della pagina
-        updateData();
-        
-        // Aggiorna i dati ogni 30 secondi (modifica se necessario)
-        setInterval(updateData, 30000);
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                loadData();
+            } else {
+                document.getElementById('login-container').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+            }
+        });
     </script>
 
 </body>
